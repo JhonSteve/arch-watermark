@@ -36,14 +36,12 @@ function goPage(n) {
     
     if (n === 1) {
         stopCamera();
-        // 如果回到首页，可以重置一些状态
     }
     if (n === 2) {
         rotationAngle = 0; // 重置旋转
         if (mode === 'camera') {
             startCamera();
         } else {
-            // 如果是上传模式，需要确保Canvas重绘
             drawWatermarkOverlay();
         }
     }
@@ -51,18 +49,15 @@ function goPage(n) {
 
 // --- PAGE 1: 水印输入逻辑 ---
 function selectTag(txt) {
-    // 移除所有 active
     document.querySelectorAll('.tag').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     
     if (txt === '') {
-        // 点击了自定义
         els.customInput.focus();
         updateCustomText();
     } else {
         currentText = txt;
         els.customInput.value = '';
-        // 高亮显示关键字
         els.textPreview.innerHTML = txt;
     }
 }
@@ -121,14 +116,11 @@ async function startCamera() {
             video: { facingMode: "environment" }
         });
         els.video.srcObject = videoStream;
-        
-        // 监听视频元数据加载，调整水印层尺寸
         els.video.onloadedmetadata = () => {
             drawWatermarkOverlay();
         };
     } catch (err) {
-        alert("无法访问摄像头，请检查权限或使用上传功能。\n(iOS请在Safari中使用)");
-        console.error(err);
+        alert("无法访问摄像头，请检查权限或使用上传功能。");
     }
 }
 
@@ -151,7 +143,6 @@ function drawUploadPreview() {
     const cvs = els.imgCanvas;
     const parent = document.getElementById('viewport');
     
-    // 计算适合屏幕的尺寸
     const mw = parent.clientWidth;
     const mh = parent.clientHeight;
     const scale = Math.min(mw / originalImg.width, mh / originalImg.height);
@@ -162,7 +153,6 @@ function drawUploadPreview() {
     const ctx = cvs.getContext('2d');
     ctx.drawImage(originalImg, 0, 0, cvs.width, cvs.height);
     
-    // 设置水印层尺寸与图片一致
     els.overlayCanvas.width = cvs.width;
     els.overlayCanvas.height = cvs.height;
     drawWatermarkOverlay();
@@ -187,12 +177,9 @@ function drawWatermarkOverlay() {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     
-    // 旋转覆盖逻辑
     ctx.save();
     ctx.translate(cvs.width/2, cvs.height/2);
     ctx.rotate(-45 * Math.PI / 180);
-    
-    // 平铺范围计算（需要覆盖旋转后的区域）
     const diag = Math.sqrt(cvs.width**2 + cvs.height**2);
     ctx.translate(-diag, -diag);
 
@@ -206,7 +193,6 @@ function drawWatermarkOverlay() {
 
 function takePhoto() {
     const v = els.video;
-    // 创建临时画布抓取这一帧
     const cvs = document.createElement('canvas');
     cvs.width = v.videoWidth;
     cvs.height = v.videoHeight;
@@ -223,7 +209,6 @@ function takePhoto() {
 function processImage() {
     stopCamera();
     els.loading.style.display = 'flex';
-    // 稍微延迟以显示loading
     setTimeout(() => {
         generateFinalResult();
         goPage(3);
@@ -242,7 +227,6 @@ function generateFinalResult() {
     const cvs = els.finalCanvas;
     const ctx = cvs.getContext('2d');
     
-    // 处理旋转后的画布尺寸
     if (rotationAngle === 90 || rotationAngle === 270) {
         cvs.width = originalImg.height;
         cvs.height = originalImg.width;
@@ -251,7 +235,6 @@ function generateFinalResult() {
         cvs.height = originalImg.height;
     }
 
-    // 1. 绘制底图
     ctx.save();
     ctx.translate(cvs.width/2, cvs.height/2);
     ctx.rotate(rotationAngle * Math.PI / 180);
@@ -262,13 +245,9 @@ function generateFinalResult() {
     }
     ctx.restore();
 
-    // 2. 绘制水印（确保水印永远是45度倾斜，不随图片旋转而旋转）
     const conf = PRESETS[density];
-    
-    // 根据图片实际像素动态调整字体大小
-    // 防止高清图上水印太小
     const scale = Math.max(cvs.width, cvs.height) / 1000; 
-    const fontSize = Math.max(24, 30 * scale); // 最小24px
+    const fontSize = Math.max(24, 30 * scale);
     const gap = conf.gap * (scale > 1 ? scale : 1);
 
     ctx.font = `bold ${fontSize}px sans-serif`;
@@ -281,7 +260,7 @@ function generateFinalResult() {
     
     ctx.save();
     ctx.translate(cvs.width/2, cvs.height/2);
-    ctx.rotate(-45 * Math.PI / 180); // 固定 -45 度
+    ctx.rotate(-45 * Math.PI / 180);
     ctx.translate(-diag, -diag);
 
     for (let y = 0; y < diag * 2; y += gap) {
@@ -292,24 +271,41 @@ function generateFinalResult() {
     ctx.restore();
 }
 
-
+// --- 核心修改：适配 iOS 的保存逻辑 ---
 function saveImage() {
     const dataURL = els.finalCanvas.toDataURL('image/jpeg', 0.95);
-
-    // 检测是否为 iOS 设备
+    
+    // 检测 iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     if (isIOS) {
-        // iOS 无法自动下载，生成一个新页面或蒙层让用户长按
-        const newWin = window.open();
-        if (newWin) {
-            newWin.document.write(`<img src="${dataURL}" style="width:100%">`);
-            newWin.document.write(`<h2 style="text-align:center; font-family:sans-serif; margin-top:20px;">请长按图片选择"存储到照片"</h2>`);
+        // 尝试调用原生分享 (Web Share API Level 2)
+        if (navigator.share) {
+            fetch(dataURL)
+                .then(res => res.blob())
+                .then(blob => {
+                    const file = new File([blob], 'watermark.jpg', { type: 'image/jpeg' });
+                    navigator.share({
+                        files: [file]
+                    }).catch((err) => {
+                        // 用户取消分享不做处理
+                        console.log('Share canceled', err);
+                    });
+                });
         } else {
-            alert("请长按图片进行保存");
+            // 降级方案：弹窗长按
+            const newWin = window.open();
+            if (newWin) {
+                newWin.document.write(`<body style="background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0;">`);
+                newWin.document.write(`<img src="${dataURL}" style="max-width:100%; max-height:80vh; box-shadow:0 0 20px rgba(255,255,255,0.2);">`);
+                newWin.document.write(`<h2 style="color:#fff; font-family:sans-serif; margin-top:20px; font-size:16px;">请长按图片选择"存储到照片"</h2>`);
+                newWin.document.write(`</body>`);
+            } else {
+                alert("请长按图片保存");
+            }
         }
     } else {
-        // 安卓和电脑可以直接下载
+        // Android/PC 直接下载
         const link = document.createElement('a');
         link.download = '水印证件_' + Date.now() + '.jpg';
         link.href = dataURL;
