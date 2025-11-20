@@ -9,12 +9,11 @@
     
     <title>arch 水印</title>
     
-    <link rel="icon" href="logo192green.png" sizes="192x192">
+    <link rel="icon" href="logo192green.png" type="image/png">
     <link rel="apple-touch-icon" href="logo192green.png">
     
     <link rel="manifest" href="manifest.json">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,4 +26,80 @@
     <div id="page1" class="page active">
         <div class="header">
             <div class="header-placeholder"></div>
-            <div class="header-title
+            <div class="header-title">水印设置</div>
+            <div class="header-placeholder"></div>
+        </div>
+        <div class="content">
+            <div class="preview-box">
+                <div class="watermark-text" id="textPreview">该证件仅供办理 <span class="highlight">某项业务</span> 使用，他用无法律效力</div>
+            </div>
+            
+            <div class="label-text">选择用途模板：</div>
+            <div class="tag-container">
+                <button class="tag" onclick="selectTag('仅供办理租房业务使用')">🏠 租房</button>
+                <button class="tag" onclick="selectTag('仅供办理手机业务使用')">📱 手机业务</button>
+                <button class="tag" onclick="selectTag('仅供身份核验使用')">🆔 身份核验</button>
+                <button class="tag" onclick="selectTag('仅供办理银行卡使用')">💳 银行办理</button>
+                <button class="tag" onclick="selectTag('仅供入职办理使用')">💼 入职</button>
+                <button class="tag active" onclick="selectTag('')">✏️ 自定义</button>
+            </div>
+
+            <input type="text" id="customInput" class="custom-input" placeholder="在此输入自定义水印内容..." oninput="updateCustomText()">
+
+            <div class="btn-area">
+                <button class="btn btn-primary" onclick="startCameraMode()">📷 拍摄照片</button>
+                <button class="btn btn-secondary" onclick="startUploadMode()">🖼️ 上传照片</button>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+    </div>
+
+    <div id="page2" class="page">
+        <div class="header">
+            <button class="back-btn" onclick="goPage(1)"><span>&lt;</span> 返回</button>
+            <div class="header-title" id="page2Title">拍摄</div>
+            <div class="header-placeholder"></div>
+        </div>
+        
+        <div class="viewport" id="viewport">
+            <video id="video" autoplay playsinline style="display:none;"></video>
+            <canvas id="imgCanvas" style="display:none;"></canvas>
+            <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="density-options">
+                <button class="density-btn" onclick="setDensity('sparse')">稀疏</button>
+                <button class="density-btn active" onclick="setDensity('normal')">正常</button>
+                <button class="density-btn" onclick="setDensity('dense')">密集</button>
+            </div>
+            
+            <button id="shutterBtn" class="shutter-btn" onclick="takePhoto()"></button>
+            <button id="nextBtn" class="btn btn-primary" style="display:none;" onclick="processImage()">下一步</button>
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <div class="header">
+            <button class="back-btn" onclick="goPage(2)"><span>&lt;</span> 返回</button>
+            <div class="header-title">导出图片</div>
+            <div class="header-placeholder"></div>
+        </div>
+        <div class="content center-content">
+            <div class="result-view">
+                <canvas id="finalCanvas"></canvas>
+                <button class="rotate-btn" onclick="rotateImage()">🔄</button>
+            </div>
+            
+            <div class="btn-area full-width">
+                <button class="btn btn-primary" onclick="saveImage()">⬇️ 保存图片</button>
+                <button class="btn btn-danger" onclick="exportPDF()">📄 导出 PDF</button>
+                <button class="btn btn-secondary" onclick="goPage(1)">🏠 回到首页</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
