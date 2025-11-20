@@ -5,225 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>安全证件水印助手</title>
+    <meta name="description" content="纯前端安全水印工具，保护您的证件隐私，拒绝被OCR识别。">
+    <title>安全证件水印助手 v2.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojMDA3YmZmIj48cGF0aCBkPSJNMjU2IDMyYTMyIDMyIDAgMCAwLTMyIDMydjY0SDY0YTMyIDMyIDAgMCAwLTMyIDMydjI1NmEzMiAzMiAwIDAgMCAzMiAzMmgyNTZhMzIgMzIgMCAwIDAgMzItMzJWMzIwSDQ0OGEzMiAzMiAwIDAgMCAzMi0zMlY5NmEzMiAzMiAwIDAgMC0zMi0zMmgtNjRWNjRhMzIgMzIgMCAwIDAtMzItMzJ6bTAgOTZoMTI4djE2MEgyNTZ6IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==">
     <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojMDA3YmZmIj48cGF0aCBkPSJNMjU2IDMyYTMyIDMyIDAgMCAwLTMyIDMydjY0SDY0YTMyIDMyIDAgMCAwLTMyIDMydjI1NmEzMiAzMiAwIDAgMCAzMiAzMmgyNTZhMzIgMzIgMCAwIDAgMzItMzJWMzIwSDQ0OGEzMiAzMiAwIDAgMCAzMi0zMlY5NmEzMiAzMiAwIDAgMC0zMi0zMmgtNjRWNjRhMzIgMzIgMCAwIDAtMzItMzJ6bTAgOTZoMTI4djE2MEgyNTZ6IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==">
 
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; padding: 20px; max-width: 600px; margin: 0 auto; color: #333; -webkit-tap-highlight-color: transparent; }
-        h2 { text-align: center; color: #333; font-weight: 600; margin-bottom: 20px; }
-        .container { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        :root { --primary: #007bff; --bg: #f4f6f9; --card: #ffffff; --text: #334155; --border: #e2e8f0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); padding: 20px; max-width: 640px; margin: 0 auto; color: var(--text); -webkit-tap-highlight-color: transparent; }
+        h2 { text-align: center; color: #1e293b; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.5px; }
+        .subtitle { text-align: center; color: #64748b; font-size: 14px; margin-bottom: 25px; }
         
-        /* 上传区域 */
-        .upload-box { border: 2px dashed #cbd5e1; padding: 40px 20px; text-align: center; border-radius: 12px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; background: #f8fafc; }
-        .upload-box:hover { border-color: #007bff; background: #eff6ff; }
-        .upload-icon { font-size: 32px; color: #94a3b8; margin-bottom: 10px; display: block;}
+        .container { background: var(--card); padding: 24px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01); }
+        
+        /* 上传区域优化：支持拖拽 */
+        .upload-box { border: 2px dashed #cbd5e1; padding: 40px 20px; text-align: center; border-radius: 16px; margin-bottom: 20px; cursor: pointer; transition: all 0.3s ease; background: #f8fafc; position: relative; overflow: hidden; }
+        .upload-box:hover, .upload-box.dragover { border-color: var(--primary); background: #eff6ff; transform: scale(1.01); }
+        .upload-icon { font-size: 40px; color: #94a3b8; margin-bottom: 12px; display: block; }
+        .upload-hint { font-size: 14px; color: #64748b; font-weight: 500; }
+        .upload-subhint { font-size: 12px; color: #94a3b8; margin-top: 5px; }
         input[type="file"] { display: none; }
         
         /* 控制面板 */
-        .controls { display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .controls { display: none; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 25px; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .control-group { display: flex; flex-direction: column; }
-        label { font-size: 13px; color: #64748b; margin-bottom: 6px; font-weight: 500; }
-        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        input[type="color"] { width: 100%; height: 40px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
-        input[type="range"] { width: 100%; accent-color: #007bff; }
-        
-        /* 画布预览 */
-        canvas { width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0; display: none; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        
-        /* 按钮组 */
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { display: flex; align-items: center; justify-content: center; padding: 14px; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; text-decoration: none; box-sizing: border-box; transition: 0.2s; }
-        .btn-primary { background: #007bff; }
-        .btn-primary:active { background: #0056b3; transform: scale(0.98); }
-        .btn-danger { background: #ef4444; }
-        .btn-danger:active { background: #dc2626; transform: scale(0.98); }
-        
-        .tips { font-size: 13px; color: #856404; margin-top: 20px; background: #fff3cd; padding: 15px; border-radius: 8px; display: none; line-height: 1.6; }
-        
-        /* 加载动画 */
-        .loading { display: none; text-align: center; margin: 20px 0; color: #666; }
-    </style>
-</head>
-<body>
-
-    <h2>🛡️ 安全证件水印助手</h2>
-
-    <div class="container">
-        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-            <span class="upload-icon">📷</span>
-            <p style="margin: 0; color: #64748b;">点击拍照 或 选择图片</p>
-        </div>
-        <input type="file" id="fileInput" accept="image/*">
-
-        <div class="loading" id="loadingText">处理中...</div>
-
-        <canvas id="previewCanvas"></canvas>
-
-        <div class="controls" id="controlsArea">
-            <div class="control-group" style="grid-column: span 2;">
-                <label>水印内容 (建议填写真实用途)</label>
-                <input type="text" id="textInput" value="此证件仅供办理 X 业务使用，他用无效">
-            </div>
-            <div class="control-group">
-                <label>字体大小 (<span id="sizeVal">28</span>)</label>
-                <input type="range" id="fontSize" min="15" max="80" value="28">
-            </div>
-            <div class="control-group">
-                <label>透明度 (<span id="alphaVal">0.18</span>)</label>
-                <input type="range" id="alpha" min="0.05" max="1" step="0.01" value="0.18">
-            </div>
-            <div class="control-group">
-                <label>旋转角度</label>
-                <input type="range" id="rotate" min="-90" max="90" value="-25">
-            </div>
-            <div class="control-group">
-                <label>颜色 (推荐灰色)</label>
-                <input type="color" id="color" value="#9CA3AF">
-            </div>
-            <div class="control-group" style="grid-column: span 2;">
-                <label>密集程度</label>
-                <input type="range" id="gap" min="100" max="500" step="20" value="180">
-            </div>
-        </div>
-
-        <div id="actionButtons" style="display: none;">
-            <div class="btn-group">
-                <a id="downloadBtn" class="btn btn-primary">💾 保存图片</a>
-                <button onclick="exportPDF()" class="btn btn-danger">📄 导出 PDF</button>
-            </div>
-            <div class="tips">
-                💡 <b>抗 OCR 干扰技巧：</b><br>
-                1. <b>透明度</b> 保持在 0.15 - 0.25 之间（当前 <span id="tipAlpha">0.18</span>）。<br>
-                2. <b>颜色</b> 保持浅灰色，不要用纯黑。<br>
-                3. 水印文字越密集，越干扰机器识别。<br>
-                * 所有处理均在本地完成，图片不上传服务器。
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const { jsPDF } = window.jspdf; // 初始化 PDF 库
-        const fileInput = document.getElementById('fileInput');
-        const canvas = document.getElementById('previewCanvas');
-        const ctx = canvas.getContext('2d');
-        const controlsArea = document.getElementById('controlsArea');
-        const actionButtons = document.getElementById('actionButtons');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const tips = document.querySelector('.tips');
-        const loadingText = document.getElementById('loadingText');
-
-        let originalImage = null;
-
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            loadingText.style.display = 'block';
-            controlsArea.style.display = 'none';
-            
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    originalImage = img;
-                    initCanvas();
-                    loadingText.style.display = 'none';
-                    controlsArea.style.display = 'grid';
-                    canvas.style.display = 'block';
-                    actionButtons.style.display = 'block';
-                    tips.style.display = 'block';
-                    drawWatermark();
-                }
-                img.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-        });
-
-        function initCanvas() {
-            // 适当压缩显示尺寸，但保存时会用较高质量
-            const maxWidth = 1000; 
-            let width = originalImage.width;
-            let height = originalImage.height;
-
-            if (width > maxWidth) {
-                height = (maxWidth / width) * height;
-                width = maxWidth;
-            }
-            canvas.width = width;
-            canvas.height = height;
-        }
-
-        function drawWatermark() {
-            if (!originalImage) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // 绘制原图
-            ctx.globalAlpha = 1;
-            ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
-
-            // 获取参数
-            const text = document.getElementById('textInput').value;
-            const fontSize = parseInt(document.getElementById('fontSize').value);
-            const alpha = parseFloat(document.getElementById('alpha').value);
-            const rotate = parseInt(document.getElementById('rotate').value);
-            const color = document.getElementById('color').value;
-            const gap = parseInt(document.getElementById('gap').value);
-
-            // 更新数值显示
-            document.getElementById('sizeVal').innerText = fontSize;
-            document.getElementById('alphaVal').innerText = alpha;
-            document.getElementById('tipAlpha').innerText = alpha;
-
-            // 绘制水印
-            ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.fillStyle = color;
-            ctx.globalAlpha = alpha;
-            ctx.textBaseline = 'middle';
-            ctx.textAlign = 'center';
-
-            const diag = Math.sqrt(canvas.width * canvas.width + canvas.height * canvas.height);
-            
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate(rotate * Math.PI / 180);
-            ctx.translate(-diag, -diag);
-
-            for (let y = 0; y < diag * 2; y += gap) {
-                for (let x = 0; x < diag * 2; x += (ctx.measureText(text).width + 60)) {
-                    ctx.fillText(text, x, y);
-                }
-            }
-            ctx.restore();
-
-            // 更新下载按钮链接
-            downloadBtn.href = canvas.toDataURL("image/jpeg", 0.92);
-            downloadBtn.download = "水印证件_" + new Date().getTime() + ".jpg";
-        }
-
-        // PDF 导出功能
-        function exportPDF() {
-            if (!originalImage) return;
-            
-            // 创建 PDF，方向根据图片长宽比自动决定
-            const orientation = canvas.width > canvas.height ? 'l' : 'p';
-            const doc = new jsPDF({
-                orientation: orientation,
-                unit: 'px',
-                format: [canvas.width, canvas.height] // 让 PDF 页面大小等于图片大小
-            });
-
-            const imgData = canvas.toDataURL("image/jpeg", 0.92);
-            doc.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-            doc.save("水印证件_" + new Date().getTime() + ".pdf");
-        }
-
-        const inputs = document.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('input', drawWatermark);
-        });
-    </script>
-</body>
-</html>
+        label { font-size: 13px; color: #475569; margin-bottom: 8px; font-weight: 600; display: flex; justify-content: space-between; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        input[type="text"]:focus { border-color: var(--primary); }
+        input[type="color"] { width: 100%; height: 42px; padding: 2px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); height: 6px; border-radius: 5px; background: #e2e8f0; outline: none; -webkit-appearance: none; } 
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: white; border: 2px solid var(--primary); border-radius: 50%;
