@@ -292,11 +292,29 @@ function generateFinalResult() {
     ctx.restore();
 }
 
+
 function saveImage() {
-    const link = document.createElement('a');
-    link.download = '水印证件_' + Date.now() + '.jpg';
-    link.href = els.finalCanvas.toDataURL('image/jpeg', 0.95);
-    link.click();
+    const dataURL = els.finalCanvas.toDataURL('image/jpeg', 0.95);
+
+    // 检测是否为 iOS 设备
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+        // iOS 无法自动下载，生成一个新页面或蒙层让用户长按
+        const newWin = window.open();
+        if (newWin) {
+            newWin.document.write(`<img src="${dataURL}" style="width:100%">`);
+            newWin.document.write(`<h2 style="text-align:center; font-family:sans-serif; margin-top:20px;">请长按图片选择"存储到照片"</h2>`);
+        } else {
+            alert("请长按图片进行保存");
+        }
+    } else {
+        // 安卓和电脑可以直接下载
+        const link = document.createElement('a');
+        link.download = '水印证件_' + Date.now() + '.jpg';
+        link.href = dataURL;
+        link.click();
+    }
 }
 
 function exportPDF() {
