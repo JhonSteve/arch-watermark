@@ -5,702 +5,442 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="纯前端安全水印工具，保护您的证件隐私，拒绝被OCR识别。">
     <title>安全证件水印助手</title>
-
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojMDA3YmZmIj48cGF0aCBkPSJNMjU2IDMyYTMyIDMyIDAgMCAwLTMyIDMydjY0SDY0YTMyIDMyIDAgMCAwLTMyIDMydjI1NmEzMiAzMiAwIDAgMCAzMiAzMmgyNTZhMzIgMzIgMCAwIDAgMzItMzJWMzIwSDQ0OGEzMiAzMiAwIDAgMCAzMi0zMlY5NmEzMiAzMiAwIDAgMC0zMi0zMmgtNjRWNjRhMzIgMzIgMCAwIDAtMzItMzJ6bTAgOTZoMTI4djE2MEgyNTZ6IiBmaWxsPSJ3aGl0ZSIvPjwvc2ZnPg==">
-    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojMDA3YmZmIj48cGF0aCBkPSJNMjU2IDMyYTMyIDMyIDAgMCAwLTMyIDMydjY0SDY0YTMyIDMyIDAgMCAwLTMyIDMydjI1NmEzMiAzMiAwIDAgMCAzMiAzMmgyNTZhMzIgMzIgMCAwIDAgMzItMzJWMzIwSDQ0OGEzMiAzMiAwIDAgMCAzMi0zMlY5NmEzMiAzMiAwIDAgMC0zMi0zMmgtNjRWNjRhMzIgMzIgMCAwIDAtMzItMzJ6bTAgOTZoMTI4djE2MEgyNTZ6IiBmaWxsPSJ3aGl0ZSIvPjwvc2ZnPg==">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <style>
-        :root {
-            --primary-green: #00e060; /* 主要绿色 */
-            --dark-bg: #000000; /* 深色背景 */
-            --card-bg: #1c1c1e; /* 卡片背景 */
-            --text-color: #ffffff; /* 主要文本颜色 */
-            --secondary-text: #8e8e93; /* 次要文本颜色 */
-            --border-color: #38383a; /* 边框颜色 */
-            --active-bg: #32d74b; /* 活跃背景 */
-            --button-red: #ff3b30; /* 危险按钮红色 */
-            --button-blue: #0a84ff; /* 分享按钮蓝色 */
-            --gray-button-bg: #3a3a3c; /* 灰色按钮背景 */
-            --gray-button-text: #ffffff; /* 灰色按钮文本 */
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--dark-bg);
-            color: var(--text-color);
-            margin: 0;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-            -webkit-tap-highlight-color: transparent;
-            overflow-x: hidden; /* 防止横向滚动 */
-        }
-
-        .page {
-            display: none;
-            flex-direction: column;
-            width: 100vw;
-            height: 100vh;
-            max-width: 430px; /* iPhone 17 Pro Max base width */
-            margin: 0 auto;
-            box-sizing: border-box;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .page.active {
-            display: flex;
-        }
-
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px 20px;
-            background: var(--dark-bg);
-            border-bottom: 0.5px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .header .back-btn {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-        }
-        .header .back-btn span {
-            font-size: 17px;
-            margin-left: 5px;
-        }
-
-        .header h3 {
-            font-size: 17px;
-            font-weight: 600;
-            margin: 0;
-            color: var(--text-color);
-        }
-
-        .header .more-btn {
-            width: 24px;
-            height: 24px;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 24px;
-            cursor: pointer;
-            opacity: 0; /* 根据截图隐藏 */
-        }
-
-        /* Page 1: 水印填写 */
-        #page1 .content {
-            flex-grow: 1;
-            padding: 30px 20px 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        #page1 h1 {
-            font-size: 34px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            line-height: 1.2;
-        }
-        #page1 .watermark-text-area {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 25px;
-        }
-        #page1 .watermark-text-area p {
-            font-size: 17px;
-            margin: 0 0 10px;
-            line-height: 1.5;
-            color: var(--text-color);
-        }
-        #page1 .editable {
-            display: inline-block;
-            background: var(--gray-button-bg);
-            color: var(--primary-green);
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        #page1 .editable:active {
-            background: #28a745;
-        }
-        #page1 .preset-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        #page1 .tag-button {
-            background: var(--gray-button-bg);
-            color: var(--gray-button-text);
-            border: none;
-            border-radius: 10px;
-            padding: 10px 15px;
-            font-size: 15px;
-            cursor: pointer;
-            transition: background 0.2s;
-            white-space: nowrap;
-        }
-        #page1 .tag-button:active {
-            background: var(--active-bg);
-        }
-
-        #page1 .custom-input-group {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 0.5px solid var(--border-color);
-        }
-        #page1 .custom-input-group label {
-            font-size: 15px;
-            color: var(--secondary-text);
-            margin-bottom: 10px;
-            display: block;
-        }
-        #page1 .custom-input {
-            width: 100%;
-            padding: 12px 15px;
-            background: var(--card-bg);
-            border: 0.5px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-color);
-            font-size: 16px;
-            box-sizing: border-box;
-            -webkit-appearance: none; /* 移除 iOS 默认样式 */
-            outline: none;
-        }
-
-        #page1 .action-buttons-bottom {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            padding: 20px;
-        }
-        #page1 .main-button {
-            width: 100%;
-            padding: 18px;
-            background: var(--primary-green);
-            color: var(--dark-bg);
-            border: none;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        #page1 .main-button:active {
-            background: #28a745;
-        }
-        #page1 .secondary-button {
-            background: var(--gray-button-bg);
-            color: var(--gray-button-text);
-        }
-        #page1 .secondary-button:active {
-            background: #555555;
-        }
-
-
-        /* Page 2: 拍摄预览 */
-        #page2 .preview-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        #page2 .preview-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            overflow: hidden;
-            width: calc(100% - 40px);
-            max-width: 400px; /* 限制预览图大小 */
-            aspect-ratio: 4/3; /* 常用照片比例，可以根据实际情况调整 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        #page2 canvas {
-            max-width: 100%;
-            max-height: 100%;
-            display: block;
-        }
-        #page2 video {
-            max-width: 100%;
-            max-height: 100%;
-            display: block;
-            object-fit: contain;
-            transform: scaleX(-1); /* 镜像翻转，让用户看到“自拍”效果 */
-            z-index: 1;
-        }
-        #page2 .watermark-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* 允许点击穿透 */
-            z-index: 2;
-        }
-
-        #page2 .watermark-options {
-            display: flex;
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 8px;
-            margin-top: 20px;
-        }
-        #page2 .watermark-option-btn {
-            flex: 1;
-            padding: 10px 0;
-            text-align: center;
-            color: var(--secondary-text);
-            font-size: 15px;
-            font-weight: 500;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-        }
-        #page2 .watermark-option-btn.active {
-            background: var(--active-bg);
-            color: var(--dark-bg);
-        }
-
-        #page2 .bottom-action-area {
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-            position: sticky;
-            bottom: 0;
-            background: var(--dark-bg);
-            width: 100%;
-            box-sizing: border-box;
-            border-top: 0.5px solid var(--border-color);
-        }
-        #page2 .shutter-button {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: var(--primary-green);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        #page2 .shutter-button:active {
-            transform: scale(0.95);
-        }
-        #page2 .shutter-button::before {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 2px solid var(--dark-bg);
-        }
-        #page2 .next-step-button {
-            width: calc(100% - 40px);
-            padding: 18px;
-            background: var(--primary-green);
-            color: var(--dark-bg);
-            border: none;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* Page 3: 分享/导出 */
-        #page3 .result-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        #page3 .result-preview-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            overflow: hidden;
-            width: calc(100% - 40px);
-            max-width: 400px;
-            aspect-ratio: 4/3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-        }
-        #page3 #finalCanvas {
-            max-width: 100%;
-            max-height: 100%;
-            display: block;
-            transform-origin: center center; /* 确保旋转原点正确 */
-        }
-        #page3 .rotate-button {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            transition: background 0.2s;
-        }
-        #page3 .rotate-button:active {
-            background: rgba(0,0,0,0.8);
-        }
-
-        #page3 .action-buttons-final {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            max-width: 400px;
-            gap: 15px;
-            padding: 20px 0;
-        }
-        #page3 .action-button {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background 0.2s;
-        }
-        #page3 .action-button.share {
-            background: var(--button-blue);
-            color: var(--text-color);
-        }
-        #page3 .action-button.share:active {
-            background: #0077e6;
-        }
-        #page3 .action-button.save {
-            background: var(--primary-green);
-            color: var(--dark-bg);
-        }
-        #page3 .action-button.save:active {
-            background: #28a745;
-        }
-        #page3 .action-button.pdf {
-            background: var(--button-red);
-            color: var(--text-color);
-        }
-        #page3 .action-button.pdf:active {
-            background: #cc2a2a;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-        }
-        .loading-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        :root { --primary: #00e060; --bg: #000000; --card: #1c1c1e; --text: #ffffff; --text-sub: #8e8e93; --border: #38383a; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .page { display: none; flex-direction: column; width: 100%; height: 100%; box-sizing: border-box; position: absolute; top: 0; left: 0; background: var(--bg); z-index: 1; }
+        .page.active { display: flex; z-index: 10; }
+        
+        /* 顶部导航 */
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg); border-bottom: 0.5px solid var(--border); height: 44px; z-index: 20; }
+        .back-btn { background: none; border: none; color: var(--text); font-size: 16px; display: flex; align-items: center; cursor: pointer; padding: 0; }
+        .back-btn span { font-size: 20px; margin-right: 4px; }
+        .header-title { font-size: 17px; font-weight: 600; }
+        
+        /* 通用布局 */
+        .content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; }
+        .center-content { align-items: center; justify-content: center; }
+        
+        /* 页面1：输入 */
+        .preview-box { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 24px; min-height: 100px; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .watermark-text { font-size: 18px; line-height: 1.5; color: var(--text); word-break: break-all; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+        .tag { background: #2c2c2e; color: var(--text); border: none; padding: 8px 16px; border-radius: 18px; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .tag.active { background: var(--primary); color: #000; font-weight: 600; }
+        .custom-input { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; box-sizing: border-box; margin-bottom: 20px; }
+        
+        .btn-area { margin-top: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
+        .btn { border: none; border-radius: 12px; padding: 16px; font-size: 17px; font-weight: 600; cursor: pointer; text-align: center; width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-secondary { background: #2c2c2e; color: var(--text); }
+        .btn-danger { background: #ff3b30; color: #fff; }
+        .btn-blue { background: #007aff; color: #fff; }
+        
+        /* 页面2：拍照/预览 */
+        .viewport { width: 100%; flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
+        .viewport video, .viewport canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .overlay-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        .controls { background: var(--bg); padding: 20px; border-top: 0.5px solid var(--border); }
+        .density-options { display: flex; background: var(--card); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+        .density-btn { flex: 1; background: none; border: none; color: var(--text-sub); padding: 8px; border-radius: 8px; font-size: 14px; }
+        .density-btn.active { background: #636366; color: #fff; font-weight: 600; }
+        
+        .shutter-btn { width: 72px; height: 72px; border-radius: 50%; background: #fff; border: 4px solid rgba(255,255,255,0.3); margin: 0 auto; display: block; cursor: pointer; }
+        
+        /* 页面3：结果 */
+        .result-view { width: 100%; max-height: 60vh; border-radius: 12px; overflow: hidden; margin-bottom: 20px; position: relative; background: var(--card); display: flex; align-items: center; justify-content: center; }
+        .result-view canvas { max-width: 100%; max-height: 100%; }
+        .rotate-btn { position: absolute; bottom: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; border: none; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        /* 辅助 */
+        input[type="file"] { display: none; }
+        .loading { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); color:#fff; display:flex; align-items:center; justify-content:center; z-index:99; display:none; }
     </style>
 </head>
 <body>
 
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <p id="loadingMessage">正在加载...</p>
+<div class="loading" id="loading">处理中...</div>
+
+<div id="page1" class="page active">
+    <div class="header">
+        <div style="width:24px;"></div>
+        <div class="header-title">水印设置</div>
+        <div style="width:24px;"></div>
+    </div>
+    <div class="content">
+        <div class="preview-box">
+            <div class="watermark-text" id="textPreview">该证件仅供办理 <span style="color:var(--primary)">某项业务</span> 使用，他用无法律效力</div>
+        </div>
+        
+        <div style="font-size:14px; color:var(--text-sub); margin-bottom:10px;">选择用途模板：</div>
+        <div class="tag-container">
+            <button class="tag" onclick="selectTag('仅供办理租房业务使用')">🏠 租房</button>
+            <button class="tag" onclick="selectTag('仅供办理手机业务使用')">📱 手机业务</button>
+            <button class="tag" onclick="selectTag('仅供身份核验使用')">🆔 身份核验</button>
+            <button class="tag" onclick="selectTag('仅供办理银行卡使用')">💳 银行办理</button>
+            <button class="tag" onclick="selectTag('仅供入职办理使用')">💼 入职</button>
+            <button class="tag active" onclick="selectTag('')">✏️ 自定义</button>
+        </div>
+
+        <input type="text" id="customInput" class="custom-input" placeholder="在此输入自定义水印内容..." oninput="updateCustomText()">
+
+        <div class="btn-area">
+            <button class="btn btn-primary" onclick="startCameraMode()">📷 拍摄照片</button>
+            <button class="btn btn-secondary" onclick="startUploadMode()">🖼️ 上传照片</button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+    </div>
+</div>
+
+<div id="page2" class="page">
+    <div class="header">
+        <button class="back-btn" onclick="goPage(1)"><span>&lt;</span> 返回</button>
+        <div class="header-title" id="page2Title">拍摄</div>
+        <div style="width:40px;"></div>
+    </div>
+    
+    <div class="viewport" id="viewport">
+        <video id="video" autoplay playsinline style="display:none;"></video>
+        <canvas id="imgCanvas" style="display:none;"></canvas>
+        <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
     </div>
 
-    <div id="page1" class="page active">
-        <div class="header">
-            <button class="back-btn" style="visibility: hidden;">&lt;</button>
-            <h3>填写水印</h3>
-            <button class="more-btn"></button>
+    <div class="controls">
+        <div class="density-options">
+            <button class="density-btn" onclick="setDensity('sparse')">稀疏</button>
+            <button class="density-btn active" onclick="setDensity('normal')">正常</button>
+            <button class="density-btn" onclick="setDensity('dense')">密集</button>
         </div>
-        <div class="content">
-            <div>
-                <h1>为证件<br>添加水印</h1>
-                <div class="watermark-text-area">
-                    <p id="currentWatermarkDisplay">该证件仅供办理 <span class="editable" onclick="openCustomWatermarkInput()">某项业务</span> 使用，禁止他用，他用无法律效力。</p>
-                </div>
+        
+        <button id="shutterBtn" class="shutter-btn" onclick="takePhoto()"></button>
+        <button id="nextBtn" class="btn btn-primary" style="display:none;" onclick="processImage()">下一步</button>
+    </div>
+</div>
 
-                <div class="preset-tags">
-                    <button class="tag-button" onclick="setWatermarkText('仅供办理租房业务使用')">🏠 租房</button>
-                    <button class="tag-button" onclick="setWatermarkText('仅供办理手机业务使用')">📱 手机业务</button>
-                    <button class="tag-button" onclick="setWatermarkText('仅供身份核验使用')">🆔 身份核验</button>
-                    <button class="tag-button" onclick="setWatermarkText('仅供办理银行卡使用')">💳 银行办理</button>
-                    <button class="tag-button" onclick="setWatermarkText('仅供入职办理使用')">💼 入职办理</button>
-                    <button class="tag-button" onclick="setWatermarkText('仅供办理宽带使用')">💻 宽带</button>
-                    <button class="tag-button" onclick="setWatermarkText('仅供办理公积金使用')">💰 公积金</button>
-                </div>
-
-                <div class="custom-input-group">
-                    <label for="customWatermarkInput">自定义水印内容</label>
-                    <input type="text" id="customWatermarkInput" class="custom-input" placeholder="请输入自定义水印内容">
-                </div>
-            </div>
-
-            <div class="action-buttons-bottom">
-                <button class="main-button" id="takePhotoButton">📷 拍照证件</button>
-                <button class="main-button secondary-button" id="uploadPhotoButton">⬆️ 上传照片</button>
-                <input type="file" id="fileInput" accept="image/*" style="display: none;">
-            </div>
+<div id="page3" class="page">
+    <div class="header">
+        <button class="back-btn" onclick="goPage(2)"><span>&lt;</span> 返回</button>
+        <div class="header-title">导出图片</div>
+        <div style="width:40px;"></div>
+    </div>
+    <div class="content center-content">
+        <div class="result-view">
+            <canvas id="finalCanvas"></canvas>
+            <button class="rotate-btn" onclick="rotateImage()">🔄</button>
+        </div>
+        
+        <div class="btn-area" style="width:100%;">
+            <button class="btn btn-primary" onclick="saveImage()">⬇️ 保存图片</button>
+            <button class="btn btn-danger" onclick="exportPDF()">📄 导出 PDF</button>
+            <button class="btn btn-secondary" onclick="goPage(1)">🏠 回到首页</button>
         </div>
     </div>
+</div>
 
-    <div id="page2" class="page">
-        <div class="header">
-            <button class="back-btn" onclick="goToPage(1)">&lt; <span>填写水印</span></button>
-            <h3 id="page2Title">拍摄证件</h3>
-            <button class="more-btn"></button>
-        </div>
-        <div class="preview-content">
-            <div class="preview-card">
-                <video id="cameraPreview" style="display: none;"></video>
-                <canvas id="previewCanvas"></canvas>
-                <div class="watermark-overlay" id="watermarkOverlayCanvasContainer">
-                    <canvas id="watermarkOverlayCanvas"></canvas>
-                </div>
-            </div>
+<script>
+    // 全局变量
+    const { jsPDF } = window.jspdf;
+    let currentText = "仅供办理业务使用，他用无效";
+    let mode = 'camera'; // 'camera' or 'upload'
+    let density = 'normal'; // sparse, normal, dense
+    let rotationAngle = 0;
+    let originalImg = null; // 上传或拍摄的原始图
+    let videoStream = null;
 
-            <div class="watermark-options">
-                <button class="watermark-option-btn active" data-density="normal">正常</button>
-                <button class="watermark-option-btn" data-density="sparse">稀疏</button>
-                <button class="watermark-option-btn" data-density="dense">密集</button>
-            </div>
-        </div>
-        <div class="bottom-action-area">
-            <button id="cameraShutterButton" class="shutter-button"></button>
-            <button id="nextStepButton" class="next-step-button" style="display: none;">下一步</button>
-        </div>
-    </div>
+    // 预设参数: 间距(px), 透明度(0-1)
+    const PRESETS = {
+        sparse: { gap: 300, alpha: 0.25, color: '#808080' },
+        normal: { gap: 200, alpha: 0.20, color: '#808080' },
+        dense:  { gap: 120, alpha: 0.15, color: '#808080' }
+    };
 
-    <div id="page3" class="page">
-        <div class="header">
-            <button class="back-btn" onclick="goToPage(2)">&lt; <span>拍摄预览</span></button>
-            <h3>最后一步</h3>
-            <button class="more-btn"></button>
-        </div>
-        <div class="result-content">
-            <div class="result-preview-card">
-                <canvas id="finalCanvas"></canvas>
-                <button class="rotate-button" onclick="rotateFinalImage()">🔄</button>
-            </div>
+    // DOM 元素
+    const els = {
+        page1: document.getElementById('page1'),
+        page2: document.getElementById('page2'),
+        page3: document.getElementById('page3'),
+        textPreview: document.getElementById('textPreview'),
+        customInput: document.getElementById('customInput'),
+        video: document.getElementById('video'),
+        imgCanvas: document.getElementById('imgCanvas'),
+        overlayCanvas: document.getElementById('overlayCanvas'),
+        finalCanvas: document.getElementById('finalCanvas'),
+        fileInput: document.getElementById('fileInput'),
+        loading: document.getElementById('loading')
+    };
 
-            <div class="action-buttons-final">
-                <button class="action-button save" onclick="saveImage()">⬇️ 保存到本地</button>
-                <button class="action-button share" onclick="shareImage()">↗️ 分享至微信好友</button>
-                <button class="action-button pdf" onclick="exportPDF()">📄 导出 PDF</button>
-                <button class="action-button" style="background: var(--gray-button-bg); color: var(--text-color);" onclick="goToPage(1)">再拍一张</button>
-            </div>
-        </div>
-    </div>
+    // --- 页面切换 ---
+    function goPage(n) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        els[`page${n}`].classList.add('active');
+        
+        if (n === 1) stopCamera();
+        if (n === 2) {
+            rotationAngle = 0; // 重置旋转
+            if (mode === 'camera') startCamera();
+            drawWatermarkOverlay(); // 绘制水印层
+        }
+    }
 
-    <script>
-        const { jsPDF } = window.jspdf;
+    // --- 页面1 逻辑 ---
+    function selectTag(txt) {
+        document.querySelectorAll('.tag').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (txt === '') {
+            // 自定义模式
+            els.customInput.focus();
+            updateCustomText();
+        } else {
+            currentText = txt;
+            els.customInput.value = '';
+            els.textPreview.innerText = txt;
+        }
+    }
 
-        // --- 全局状态管理 ---
-        let currentPage = 1;
-        let watermarkText = "该证件仅供办理某项业务使用，他用无法律效力。";
-        let originalImageBlob = null; // 存储原始图片 blob
-        let currentDensity = 'normal'; // 水印密度: sparse, normal, dense
-        let currentRotation = 0; // 最终图片旋转角度 (0, 90, 180, 270)
+    function updateCustomText() {
+        const val = els.customInput.value.trim();
+        currentText = val || "仅供办理业务使用，他用无效";
+        els.textPreview.innerText = currentText;
+    }
 
-        // 相机相关
-        let videoStream = null;
-        let isCameraMode = false; // 判断当前是拍照模式还是上传图片模式
+    function startCameraMode() {
+        mode = 'camera';
+        document.getElementById('page2Title').innerText = "拍摄证件";
+        document.getElementById('shutterBtn').style.display = 'block';
+        document.getElementById('nextBtn').style.display = 'none';
+        els.video.style.display = 'block';
+        els.imgCanvas.style.display = 'none';
+        goPage(2);
+    }
 
-        // DOM 元素引用
-        const pages = {
-            1: document.getElementById('page1'),
-            2: document.getElementById('page2'),
-            3: document.getElementById('page3')
+    function startUploadMode() {
+        els.fileInput.click();
+    }
+
+    els.fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        mode = 'upload';
+        document.getElementById('page2Title').innerText = "图片预览";
+        document.getElementById('shutterBtn').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'block';
+        els.video.style.display = 'none';
+        els.imgCanvas.style.display = 'block';
+        els.loading.style.display = 'flex';
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const img = new Image();
+            img.onload = () => {
+                originalImg = img;
+                drawUploadPreview();
+                els.loading.style.display = 'none';
+                goPage(2);
+            };
+            img.src = evt.target.result;
         };
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const loadingMessage = document.getElementById('loadingMessage');
+        reader.readAsDataURL(file);
+    });
 
-        const watermarkDisplay = document.getElementById('currentWatermarkDisplay');
-        const customWatermarkInput = document.getElementById('customWatermarkInput');
-        const takePhotoButton = document.getElementById('takePhotoButton');
-        const uploadPhotoButton = document.getElementById('uploadPhotoButton');
-        const fileInput = document.getElementById('fileInput');
+    // --- 页面2 逻辑 ---
+    async function startCamera() {
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
+            });
+            els.video.srcObject = videoStream;
+            // 等待视频尺寸加载以调整水印层
+            els.video.onloadedmetadata = () => {
+                drawWatermarkOverlay(); 
+            };
+        } catch (err) {
+            alert("无法访问摄像头，请使用上传功能。");
+        }
+    }
 
-        const cameraPreview = document.getElementById('cameraPreview');
-        const previewCanvas = document.getElementById('previewCanvas');
-        const watermarkOverlayCanvasContainer = document.getElementById('watermarkOverlayCanvasContainer');
-        const watermarkOverlayCanvas = document.getElementById('watermarkOverlayCanvas');
-        const page2Title = document.getElementById('page2Title');
-        const shutterButton = document.getElementById('cameraShutterButton');
-        const nextStepButton = document.getElementById('nextStepButton');
-        const watermarkOptionButtons = document.querySelectorAll('#page2 .watermark-option-btn');
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+    }
 
-        const finalCanvas = document.getElementById('finalCanvas');
+    function setDensity(type) {
+        density = type;
+        document.querySelectorAll('.density-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        drawWatermarkOverlay();
+    }
 
-        // --- 初始化 & 页面导航 ---
-        function showLoading(message = '处理中...') {
-            loadingMessage.textContent = message;
-            loadingOverlay.classList.add('show');
+    // 绘制上传预览图 (保持比例适配屏幕)
+    function drawUploadPreview() {
+        if (!originalImg) return;
+        const cvs = els.imgCanvas;
+        const parent = document.getElementById('viewport');
+        const mw = parent.clientWidth;
+        const mh = parent.clientHeight;
+        
+        // 计算缩放
+        const scale = Math.min(mw / originalImg.width, mh / originalImg.height);
+        cvs.width = originalImg.width * scale;
+        cvs.height = originalImg.height * scale;
+        const ctx = cvs.getContext('2d');
+        ctx.drawImage(originalImg, 0, 0, cvs.width, cvs.height);
+        
+        // 调整水印层大小匹配图片
+        els.overlayCanvas.width = cvs.width;
+        els.overlayCanvas.height = cvs.height;
+        drawWatermarkOverlay();
+    }
+
+    // 绘制水印覆盖层 (通用)
+    function drawWatermarkOverlay() {
+        // 如果是相机模式，画布大小设为可视区域大小
+        // 如果是上传模式，画布大小已经设为图片大小
+        const cvs = els.overlayCanvas;
+        const ctx = cvs.getContext('2d');
+        
+        if (mode === 'camera') {
+            const vp = document.getElementById('viewport');
+            cvs.width = vp.clientWidth;
+            cvs.height = vp.clientHeight;
         }
 
-        function hideLoading() {
-            loadingOverlay.classList.remove('show');
-        }
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        
+        const conf = PRESETS[density];
+        ctx.font = "bold 24px sans-serif";
+        ctx.fillStyle = conf.color;
+        ctx.globalAlpha = conf.alpha;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // 旋转水印
+        ctx.save();
+        // 移动到中心旋转
+        ctx.translate(cvs.width/2, cvs.height/2);
+        ctx.rotate(-45 * Math.PI / 180);
+        ctx.translate(-cvs.width, -cvs.height); // 移回左上角以便平铺
 
-        function goToPage(pageNumber) {
-            Object.values(pages).forEach(page => page.classList.remove('active'));
-            pages[pageNumber].classList.add('active');
-            currentPage = pageNumber;
-
-            // 页面切换时执行特定操作
-            if (pageNumber === 1) {
-                stopCamera();
-                // 重置所有状态
-                originalImageBlob = null;
-                isCameraMode = false;
-                shutterButton.style.display = 'flex';
-                nextStepButton.style.display = 'none';
-                previewCanvas.style.display = 'block'; // 默认显示 Canvas
-                cameraPreview.style.display = 'none'; // 隐藏视频流
-                watermarkDisplay.innerHTML = `该证件仅供办理 <span class="editable" onclick="openCustomWatermarkInput()">某项业务</span> 使用，禁止他用，他用无法律效力。`;
-                customWatermarkInput.value = "";
-                watermarkText = "该证件仅供办理某项业务使用，他用无法律效力。"; // 重置默认文本
-                currentRotation = 0; // 重置旋转角度
-            } else if (pageNumber === 2) {
-                // 如果是从 Page1 进入 Page2，并且是拍照模式，则启动相机
-                if (isCameraMode) {
-                    startCamera();
-                } else {
-                    // 如果是上传模式，则直接绘制预览
-                    drawPreviewCanvas();
-                }
-            } else if (pageNumber === 3) {
-                stopCamera();
-                drawFinalCanvas();
+        const diag = Math.sqrt(cvs.width**2 + cvs.height**2) * 2; // 覆盖足够大的区域
+        for (let y = 0; y < diag; y += conf.gap) {
+            for (let x = 0; x < diag; x += (ctx.measureText(currentText).width + 60)) {
+                ctx.fillText(currentText, x, y);
             }
         }
+        ctx.restore();
+    }
 
-        // --- Page 1 逻辑 ---
-        function setWatermarkText(text) {
-            watermarkText = text;
-            watermarkDisplay.textContent = text;
-            customWatermarkInput.value = ""; // 清空自定义输入框
+    // 拍照处理
+    function takePhoto() {
+        const v = els.video;
+        const cvs = document.createElement('canvas');
+        cvs.width = v.videoWidth;
+        cvs.height = v.videoHeight;
+        cvs.getContext('2d').drawImage(v, 0, 0);
+        
+        const img = new Image();
+        img.onload = () => {
+            originalImg = img;
+            processImage();
+        };
+        img.src = cvs.toDataURL('image/jpeg');
+    }
+
+    // 处理并进入结果页
+    function processImage() {
+        stopCamera();
+        generateFinalResult();
+        goPage(3);
+    }
+
+    // --- 页面3 逻辑 ---
+    function rotateImage() {
+        rotationAngle = (rotationAngle + 90) % 360;
+        generateFinalResult();
+    }
+
+    function generateFinalResult() {
+        if (!originalImg) return;
+        const cvs = els.finalCanvas;
+        const ctx = cvs.getContext('2d');
+        
+        // 处理旋转逻辑
+        if (rotationAngle === 90 || rotationAngle === 270) {
+            cvs.width = originalImg.height;
+            cvs.height = originalImg.width;
+        } else {
+            cvs.width = originalImg.width;
+            cvs.height = originalImg.height;
         }
 
-        function openCustomWatermarkInput() {
-            // 弹出输入框或直接在 input 里编辑
-            // 已经集成到 customWatermarkInput 框中
+        ctx.save();
+        // 移动原点到中心进行图片旋转
+        ctx.translate(cvs.width/2, cvs.height/2);
+        ctx.rotate(rotationAngle * Math.PI / 180);
+        if (rotationAngle === 90 || rotationAngle === 270) {
+             ctx.drawImage(originalImg, -originalImg.height/2, -originalImg.width/2);
+        } else {
+             ctx.drawImage(originalImg, -originalImg.width/2, -originalImg.height/2);
         }
+        ctx.restore();
 
-        customWatermarkInput.addEventListener('input', (e) => {
-            if (e.target.value.trim() !== '') {
-                watermarkText = e.target.value;
-                watermarkDisplay.textContent = watermarkText;
-            } else {
-                watermarkText = "该证件仅供办理某项业务使用，他用无法律效力。";
-                watermarkDisplay.innerHTML = `该证件仅供办理 <span class="editable" onclick="openCustomWatermarkInput()">某项业务</span> 使用，禁止他用，他用无法律效力。`;
+        // 绘制水印 (在旋转后的画布上再叠一层)
+        const conf = PRESETS[density];
+        // 放大字体适应原图分辨率 (假设原图较大，这里按比例放大字体)
+        const scale = Math.max(cvs.width, cvs.height) / 1000; 
+        const fontSize = Math.max(24, 30 * scale);
+        
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.fillStyle = conf.color;
+        ctx.globalAlpha = conf.alpha;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // 再次旋转坐标系用于绘制倾斜水印
+        const diag = Math.sqrt(cvs.width**2 + cvs.height**2);
+        ctx.save();
+        ctx.translate(cvs.width/2, cvs.height/2);
+        ctx.rotate(-45 * Math.PI / 180);
+        ctx.translate(-diag, -diag);
+
+        const gap = conf.gap * (scale > 1 ? scale : 1); // 间距也随分辨率缩放
+        
+        for (let y = 0; y < diag * 2; y += gap) {
+            for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + (60 * scale))) {
+                ctx.fillText(currentText, x, y);
             }
+        }
+        ctx.restore();
+    }
+
+    function saveImage() {
+        const link = document.createElement('a');
+        link.download = '水印证件_' + Date.now() + '.jpg';
+        link.href = els.finalCanvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+    }
+
+    function exportPDF() {
+        const cvs = els.finalCanvas;
+        const imgData = cvs.toDataURL('image/jpeg', 0.95);
+        const orientation = cvs.width > cvs.height ? 'l' : 'p';
+        
+        // 创建PDF，单位设为像素，尺寸与图片一致
+        const doc = new jsPDF({
+            orientation: orientation,
+            unit: 'px',
+            format: [cvs.width, cvs.height]
         });
-
-        // 拍照按钮
-        takePhotoButton.addEventListener('click', () => {
-            isCameraMode = true;
-            page2Title.textContent = '拍摄证件';
-            shutterButton.style.display = 'flex';
-            nextStepButton.style.display = 'none';
-            goToPage(2);
-        });
-
-        // 上传照片按钮
-        uploadPhotoButton.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                isCameraMode = false;
-                page2Title.textContent = '图片预览';
-                shutterButton.style.display = 'none';
-                nextStepButton.style.display = 'block';
-                showLoading('正在加载图片...');
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    originalImageBlob = event.target.result; // Data URL
-                    hideLoading();
-                    goToPage(2);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // --- Page 2 逻辑 ---
-        async function startCamera() {
-            cameraPreview.style.display = 'block';
-            previewCanvas.style.display = 'none'; // 隐藏 canvas
-            watermarkOverlayCanvasContainer.style.display = 'block'; // 显示水印叠加层
-            try {
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" } // 优先后置摄像头
-                });
-                cameraPreview.srcObject = videoStream;
-                cameraPreview.play();
-
-                // 确保视频元数据加载后再绘制水印
-                cameraPreview.onloadedmetadata = () => {
-                    const { videoWidth, videoHeight } = cameraPreview;
-                    watermarkOverlayCanvas.width = videoWidth;
-                    watermarkOverlayCanvas.height = videoHeight
+        
+        doc.addImage(imgData, 'JPEG', 0, 0, cvs.width, cvs.height);
+        doc.save('水印证件_' + Date.now() + '.pdf');
+    }
+</script>
+</body>
+</html>
