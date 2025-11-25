@@ -199,10 +199,11 @@ function drawWatermarkOverlay() {
     ctx.translate(cvs.width/2, cvs.height/2);
     ctx.rotate(-45 * Math.PI / 180);
     const diag = Math.sqrt(cvs.width**2 + cvs.height**2);
-    ctx.translate(-diag, -diag);
+    const stepX = ctx.measureText(currentText).width + params.textSpacing;
+    ctx.translate(-diag/2, -diag/2);
 
-    for (let y = 0; y < diag * 2; y += params.gap) {
-        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + params.textSpacing)) {
+    for (let y = -diag; y <= diag; y += params.gap) {
+        for (let x = -diag; x <= diag; x += stepX) {
             ctx.fillText(currentText, x, y);
         }
     }
@@ -272,14 +273,15 @@ function generateFinalResult() {
     ctx.textBaseline = "middle";
     
     const diag = Math.sqrt(cvs.width**2 + cvs.height**2);
-    
+    const stepX = ctx.measureText(currentText).width + params.textSpacing;
+
     ctx.save();
     ctx.translate(cvs.width/2, cvs.height/2);
     ctx.rotate(-45 * Math.PI / 180);
-    ctx.translate(-diag, -diag);
+    ctx.translate(-diag/2, -diag/2);
 
-    for (let y = 0; y < diag * 2; y += params.gap) {
-        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + params.textSpacing)) {
+    for (let y = -diag; y <= diag; y += params.gap) {
+        for (let x = -diag; x <= diag; x += stepX) {
             ctx.fillText(currentText, x, y);
         }
     }
