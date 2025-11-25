@@ -29,13 +29,19 @@ const els = {
     loading: document.getElementById('loading')
 };
 
+window.addEventListener('beforeunload', stopCamera);
+
 // --- 页面切换逻辑 ---
 function goPage(n) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(`page${n}`).classList.add('active');
-    
+
     if (n === 1) {
         stopCamera();
+    }
+    if (n !== 2) {
+        els.overlayCanvas.width = 0;
+        els.overlayCanvas.height = 0;
     }
     if (n === 2) {
         rotationAngle = 0; // 重置旋转
@@ -48,9 +54,11 @@ function goPage(n) {
 }
 
 // --- PAGE 1: 水印输入逻辑 ---
-function selectTag(txt) {
+function selectTag(txt, evt) {
     document.querySelectorAll('.tag').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (evt && evt.target) {
+        evt.target.classList.add('active');
+    }
     
     if (txt === '') {
         els.customInput.focus();
@@ -104,7 +112,15 @@ els.fileInput.addEventListener('change', (e) => {
             els.loading.style.display = 'none';
             goPage(2);
         };
+        img.onerror = () => {
+            els.loading.style.display = 'none';
+            alert("图片加载失败，请重试或选择其他文件。");
+        };
         img.src = evt.target.result;
+    };
+    reader.onerror = () => {
+        els.loading.style.display = 'none';
+        alert("文件读取失败，请重试或选择其他文件。");
     };
     reader.readAsDataURL(file);
 });
@@ -131,10 +147,12 @@ function stopCamera() {
     }
 }
 
-function setDensity(type) {
+function setDensity(type, evt) {
     density = type;
     document.querySelectorAll('.density-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (evt && evt.target) {
+        evt.target.classList.add('active');
+    }
     drawWatermarkOverlay();
 }
 
@@ -170,10 +188,10 @@ function drawWatermarkOverlay() {
 
     ctx.clearRect(0, 0, cvs.width, cvs.height);
     
-    const conf = PRESETS[density];
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillStyle = conf.color;
-    ctx.globalAlpha = conf.alpha;
+    const params = getWatermarkParams(cvs.width, cvs.height);
+    ctx.font = `bold ${params.fontSize}px sans-serif`;
+    ctx.fillStyle = params.color;
+    ctx.globalAlpha = params.alpha;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     
@@ -183,8 +201,8 @@ function drawWatermarkOverlay() {
     const diag = Math.sqrt(cvs.width**2 + cvs.height**2);
     ctx.translate(-diag, -diag);
 
-    for (let y = 0; y < diag * 2; y += conf.gap) {
-        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + 60)) {
+    for (let y = 0; y < diag * 2; y += params.gap) {
+        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + params.textSpacing)) {
             ctx.fillText(currentText, x, y);
         }
     }
@@ -245,14 +263,11 @@ function generateFinalResult() {
     }
     ctx.restore();
 
-    const conf = PRESETS[density];
-    const scale = Math.max(cvs.width, cvs.height) / 1000; 
-    const fontSize = Math.max(24, 30 * scale);
-    const gap = conf.gap * (scale > 1 ? scale : 1);
+    const params = getWatermarkParams(cvs.width, cvs.height);
 
-    ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.fillStyle = conf.color;
-    ctx.globalAlpha = conf.alpha;
+    ctx.font = `bold ${params.fontSize}px sans-serif`;
+    ctx.fillStyle = params.color;
+    ctx.globalAlpha = params.alpha;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     
@@ -263,12 +278,26 @@ function generateFinalResult() {
     ctx.rotate(-45 * Math.PI / 180);
     ctx.translate(-diag, -diag);
 
-    for (let y = 0; y < diag * 2; y += gap) {
-        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + (60 * scale))) {
+    for (let y = 0; y < diag * 2; y += params.gap) {
+        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + params.textSpacing)) {
             ctx.fillText(currentText, x, y);
         }
     }
     ctx.restore();
+}
+
+function getWatermarkParams(width, height) {
+    const conf = PRESETS[density];
+    const scale = Math.max(width, height) / 1000;
+    const safeScale = Math.max(1, scale);
+
+    return {
+        fontSize: Math.max(24, 30 * scale),
+        gap: conf.gap * safeScale,
+        textSpacing: 60 * safeScale,
+        color: conf.color,
+        alpha: conf.alpha
+    };
 }
 
 // --- 核心修改：适配 iOS 的保存逻辑 ---

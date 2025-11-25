@@ -36,12 +36,12 @@
             
             <div class="label-text">选择用途模板：</div>
             <div class="tag-container">
-                <button class="tag" onclick="selectTag('仅供办理租房业务使用')">🏠 租房</button>
-                <button class="tag" onclick="selectTag('仅供办理手机业务使用')">📱 手机业务</button>
-                <button class="tag" onclick="selectTag('仅供身份核验使用')">🆔 身份核验</button>
-                <button class="tag" onclick="selectTag('仅供办理银行卡使用')">💳 银行办理</button>
-                <button class="tag" onclick="selectTag('仅供入职办理使用')">💼 入职</button>
-                <button class="tag active" onclick="selectTag('')">✏️ 自定义</button>
+                <button class="tag" onclick="selectTag('仅供办理租房业务使用', event)">🏠 租房</button>
+                <button class="tag" onclick="selectTag('仅供办理手机业务使用', event)">📱 手机业务</button>
+                <button class="tag" onclick="selectTag('仅供身份核验使用', event)">🆔 身份核验</button>
+                <button class="tag" onclick="selectTag('仅供办理银行卡使用', event)">💳 银行办理</button>
+                <button class="tag" onclick="selectTag('仅供入职办理使用', event)">💼 入职</button>
+                <button class="tag active" onclick="selectTag('', event)">✏️ 自定义</button>
             </div>
 
             <input type="text" id="customInput" class="custom-input" placeholder="在此输入自定义水印内容..." oninput="updateCustomText()">
@@ -69,9 +69,9 @@
 
         <div class="controls">
             <div class="density-options">
-                <button class="density-btn" onclick="setDensity('sparse')">稀疏</button>
-                <button class="density-btn active" onclick="setDensity('normal')">正常</button>
-                <button class="density-btn" onclick="setDensity('dense')">密集</button>
+                <button class="density-btn" onclick="setDensity('sparse', event)">稀疏</button>
+                <button class="density-btn active" onclick="setDensity('normal', event)">正常</button>
+                <button class="density-btn" onclick="setDensity('dense', event)">密集</button>
             </div>
             
             <button id="shutterBtn" class="shutter-btn" onclick="takePhoto()"></button>
