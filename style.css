@@ -14,7 +14,7 @@ body {
     background: var(--bg);
     color: var(--text);
     margin: 0;
-    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -32,6 +32,8 @@ body {
     left: 0;
     background: var(--bg);
     z-index: 1;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 .page.active {
     display: flex;
