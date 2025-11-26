@@ -29,13 +29,19 @@ const els = {
     loading: document.getElementById('loading')
 };
 
+window.addEventListener('beforeunload', stopCamera);
+
 // --- 页面切换逻辑 ---
 function goPage(n) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(`page${n}`).classList.add('active');
-    
+
     if (n === 1) {
         stopCamera();
+    }
+    if (n !== 2) {
+        els.overlayCanvas.width = 0;
+        els.overlayCanvas.height = 0;
     }
     if (n === 2) {
         rotationAngle = 0; // 重置旋转
@@ -48,9 +54,11 @@ function goPage(n) {
 }
 
 // --- PAGE 1: 水印输入逻辑 ---
-function selectTag(txt) {
+function selectTag(txt, evt) {
     document.querySelectorAll('.tag').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (evt && evt.target) {
+        evt.target.classList.add('active');
+    }
     
     if (txt === '') {
         els.customInput.focus();
@@ -104,7 +112,15 @@ els.fileInput.addEventListener('change', (e) => {
             els.loading.style.display = 'none';
             goPage(2);
         };
+        img.onerror = () => {
+            els.loading.style.display = 'none';
+            alert("图片加载失败，请重试或选择其他文件。");
+        };
         img.src = evt.target.result;
+    };
+    reader.onerror = () => {
+        els.loading.style.display = 'none';
+        alert("文件读取失败，请重试或选择其他文件。");
     };
     reader.readAsDataURL(file);
 });
@@ -131,10 +147,12 @@ function stopCamera() {
     }
 }
 
-function setDensity(type) {
+function setDensity(type, evt) {
     density = type;
     document.querySelectorAll('.density-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (evt && evt.target) {
+        evt.target.classList.add('active');
+    }
     drawWatermarkOverlay();
 }
 
@@ -161,7 +179,7 @@ function drawUploadPreview() {
 function drawWatermarkOverlay() {
     const cvs = els.overlayCanvas;
     const ctx = cvs.getContext('2d');
-    
+
     if (mode === 'camera') {
         const vp = document.getElementById('viewport');
         cvs.width = vp.clientWidth;
@@ -169,26 +187,8 @@ function drawWatermarkOverlay() {
     }
 
     ctx.clearRect(0, 0, cvs.width, cvs.height);
-    
-    const conf = PRESETS[density];
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillStyle = conf.color;
-    ctx.globalAlpha = conf.alpha;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    
-    ctx.save();
-    ctx.translate(cvs.width/2, cvs.height/2);
-    ctx.rotate(-45 * Math.PI / 180);
-    const diag = Math.sqrt(cvs.width**2 + cvs.height**2);
-    ctx.translate(-diag, -diag);
 
-    for (let y = 0; y < diag * 2; y += conf.gap) {
-        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + 60)) {
-            ctx.fillText(currentText, x, y);
-        }
-    }
-    ctx.restore();
+    renderWatermarkLayer(ctx, cvs.width, cvs.height, 0);
 }
 
 function takePhoto() {
@@ -226,7 +226,8 @@ function generateFinalResult() {
     if (!originalImg) return;
     const cvs = els.finalCanvas;
     const ctx = cvs.getContext('2d');
-    
+    const rotationRad = rotationAngle * Math.PI / 180;
+
     if (rotationAngle === 90 || rotationAngle === 270) {
         cvs.width = originalImg.height;
         cvs.height = originalImg.width;
@@ -235,36 +236,60 @@ function generateFinalResult() {
         cvs.height = originalImg.height;
     }
 
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+
     ctx.save();
-    ctx.translate(cvs.width/2, cvs.height/2);
-    ctx.rotate(rotationAngle * Math.PI / 180);
-    if (rotationAngle === 90 || rotationAngle === 270) {
-         ctx.drawImage(originalImg, -originalImg.height/2, -originalImg.width/2);
-    } else {
-         ctx.drawImage(originalImg, -originalImg.width/2, -originalImg.height/2);
-    }
+    ctx.translate(cvs.width / 2, cvs.height / 2);
+    ctx.rotate(rotationRad);
+    ctx.drawImage(originalImg, -originalImg.width / 2, -originalImg.height / 2);
     ctx.restore();
 
-    const conf = PRESETS[density];
-    const scale = Math.max(cvs.width, cvs.height) / 1000; 
-    const fontSize = Math.max(24, 30 * scale);
-    const gap = conf.gap * (scale > 1 ? scale : 1);
+    renderWatermarkLayer(ctx, cvs.width, cvs.height, rotationRad);
+}
 
-    ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.fillStyle = conf.color;
-    ctx.globalAlpha = conf.alpha;
+function getWatermarkParams(width, height) {
+    const conf = PRESETS[density];
+    const scale = Math.max(width, height) / 1000;
+    const safeScale = Math.max(1, scale);
+
+    return {
+        fontSize: Math.max(24, 30 * scale),
+        gap: conf.gap * safeScale,
+        textSpacing: 60 * safeScale,
+        color: conf.color,
+        alpha: conf.alpha
+    };
+}
+
+function setWatermarkStyle(ctx, params) {
+    ctx.font = `bold ${params.fontSize}px sans-serif`;
+    ctx.fillStyle = params.color;
+    ctx.globalAlpha = params.alpha;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    
-    const diag = Math.sqrt(cvs.width**2 + cvs.height**2);
-    
-    ctx.save();
-    ctx.translate(cvs.width/2, cvs.height/2);
-    ctx.rotate(-45 * Math.PI / 180);
-    ctx.translate(-diag, -diag);
+}
 
-    for (let y = 0; y < diag * 2; y += gap) {
-        for (let x = 0; x < diag * 2; x += (ctx.measureText(currentText).width + (60 * scale))) {
+function renderWatermarkLayer(ctx, width, height, angleRad) {
+    const params = getWatermarkParams(width, height);
+    const diag = Math.sqrt(width ** 2 + height ** 2);
+
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(angleRad);
+    setWatermarkStyle(ctx, params);
+    paintWatermark(ctx, diag, params);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+}
+
+function paintWatermark(ctx, diag, params) {
+    const stepX = ctx.measureText(currentText).width + params.textSpacing;
+
+    ctx.save();
+    ctx.rotate(-45 * Math.PI / 180);
+
+    for (let y = -diag; y <= diag; y += params.gap) {
+        for (let x = -diag; x <= diag; x += stepX) {
             ctx.fillText(currentText, x, y);
         }
     }
